@@ -1,41 +1,70 @@
-class A extends Thread{
-	public void run(){
-		for(int i=1;i<=5;i++){
-			if (i==1) yield();
-			System.out.println("\t From Thread A: i= " + i);
-		}
-	System.out.println("Exiting from A");
-	}
+class SharedResource {
+    synchronized void printMessage(String threadName, int value) {
+        System.out.println("\t" + threadName + ": value=" + value);
+    }
 }
-class B extends Thread{
-	public void run(){
-		for(int j=1;j<=5;j++){
-			System.out.println("\t From Thread B: j= " + j);
-			if (j==3) stop();
-		}
-	System.out.println("Exiting from B");
-	}
+
+class A extends Thread {
+    SharedResource resource;
+
+    A(SharedResource resource) {
+        this.resource = resource;
+    }
+
+    public void run() {
+        for (int i = 1; i <= 5; i++) {
+            if (i == 1) Thread.yield();
+            resource.printMessage("Thread A", i);
+        }
+    }
 }
-class C extends Thread{
-	public void run(){
-		for(int k=1;k<=5;k++){
-			System.out.println("\t From Thread C: k= " + k);
-			if (k==1){
-				try{
-					sleep(1000);
-			}
-			catch (Exception e){
-				System.out.println("After exception " + e);
-			}
-		}
-	System.out.println("Exiting from C");
-	}
+
+class B extends Thread {
+    SharedResource resource;
+
+    B(SharedResource resource) {
+        this.resource = resource;
+    }
+
+    public void run() {
+        for (int j = 1; j <= 5; j++) {
+            if (j == 3) {
+                System.out.println("Thread B stopping itself.");
+              stop();
+            }
+            resource.printMessage("Thread B", j);
+        }
+    }
 }
-class SynchTest{
+
+class C extends Thread {
+    SharedResource resource;
+
+    C(SharedResource resource) {
+        this.resource = resource;
+    }
+
+    public void run() {
+        for (int k = 1; k <= 5; k++) {
+            if (k == 1) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    System.out.println("Exception: " + e);
+                }
+            }
+            resource.printMessage("Thread C", k);
+        }
+    }
+}
+
+class SynchedTest{
     public static void main(String[] args) {
-        A threadA = new A();
-        B threadB = new B();
-        C threadC = new C();
+        SharedResource resource = new SharedResource();
+
+        A threadA = new A(resource);
+        B threadB = new B(resource);
+        C threadC = new C(resource);
 
         threadA.start();
         threadB.start();
